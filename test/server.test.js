@@ -43,3 +43,16 @@ test('a deleted bookmark is gone', () => withServer(async (base, store) => {
   assert.equal((await fetch(`${base}/bookmarks/${b.id}`, { method: 'DELETE', headers: authed })).status, 204);
   assert.equal((await fetch(`${base}/bookmarks/${b.id}`, { headers: authed })).status, 404);
 }));
+
+test('a url the URL parser rejects gets 422 and the API stays up', () => withServer(async (base) => {
+  const res = await fetch(`${base}/bookmarks`, { method: 'POST', headers: authed, body: JSON.stringify({ title: 'A', url: 'http://a:99999' }) });
+  assert.equal(res.status, 422);
+  assert.equal((await fetch(`${base}/health`)).status, 200);
+}));
+
+test('a fractional page is read as its whole page', () => withServer(async (base, store) => {
+  for (let i = 0; i < 12; i++) store.add({ title: `t${i}`, url: 'https://a.com', tags: [] });
+  const body = await (await fetch(`${base}/bookmarks?page=1.5`, { headers: authed })).json();
+  assert.equal(body.page, 1);
+  assert.equal(body.items[0].id, 1);
+}));

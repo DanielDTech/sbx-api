@@ -26,7 +26,7 @@ export function createServer({ store, keys, pageSize = 10 }) {
     if (!match) return send(res, 404, { error: 'not found' });
     const id = match[1] ? Number(match[1]) : null;
     if (req.method === 'GET' && id === null) {
-      const result = paginate(store.list(), Number(url.searchParams.get('page')) || 1, pageSize);
+      const result = paginate(store.list(), Math.trunc(Number(url.searchParams.get('page'))) || 1, pageSize);
       return send(res, 200, { ...result, items: result.items.map(serializeBookmark) });
     }
     if (req.method === 'GET') {
