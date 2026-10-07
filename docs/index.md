@@ -122,91 +122,115 @@ own.
 | Dependency | Pin | Owns | What this repository tests |
 |---|---|---|---|
 | `sbx-lib` | `github:DanielDTech/sbx-lib#v0.1.1` | the bookmark validation rules behind the `422` response (`validateBookmark`) | that an invalid body yields `422` and that `check.errors` is passed through unchanged. Never re-test the individual rules; they belong to `sbx-lib` |
-| `sbx-core` | `github:DanielDTech/sbx-core#v1.0.0` | expected to own url normalization via `normalizeUrl`, used on create. **MISSING — see Local environment** | that create calls it. Nothing is known about its behaviour beyond that one call, so its normalization rules are its own to test, not this repository's |
+| `sbx-core` | `github:DanielDTech/sbx-core#v1.0.0` | url normalization via `normalizeUrl`, used on create. In its own words: "lowercase host, no default port, no fragment, no bare trailing slash" | that create calls it and stores what it returns. Never the normalization rules themselves: `sbx-core` is maintained outside the sbx project and tests its own behaviour |
 | `node:http`, `node:fs`, `node:path` | Node's own | the http server, file IO and path handling | nothing; these are the platform |
 
 `sbx-core` is used in exactly one place: `src/http/server.js` line 3 imports
 `normalizeUrl` from it, and line 40 calls it on `POST /bookmarks`. That single import is
 the only use of `sbx-core` anywhere in the repository.
 
+`sbx-core` is maintained outside the sbx project. Its own README says so, and says what
+it owns: lowercasing the host, dropping a default port, dropping the fragment and
+dropping a bare trailing slash. Those rules are its to test, not this repository's. The
+line this repository draws is the same one it draws for `sbx-lib`: assert that create
+calls `normalizeUrl` and stores whatever it returns, and stop there. A test here that
+pinned down, say, which ports count as default would be a test of somebody else's code,
+and it would break when they legitimately change it.
+
 ## Local environment
 
-### Intended commands
+The environment stands up. `npm install` resolves both git dependencies and `npm test`
+passes in full.
+
+### Commands
 
 ```sh
-npm install
-npm test
-PORT=4600 SBX_DATA_FILE=data/bookmarks.json npm start
-
-curl http://localhost:4600/health
-curl -H 'x-api-key: dev-key' http://localhost:4600/bookmarks
+npm install                 # resolves sbx-lib and sbx-core from GitHub
+npm test                    # node --test: 17 tests, 17 pass, 0 fail
 ```
 
-### The environment cannot currently be stood up
+Confirmed on 2026-10-07 on Node v24.21.0: 17 tests, 17 pass, 0 fail. The suite is the
+four test files together — `test/store.test.js`, `test/auth.test.js`,
+`test/list.test.js` and `test/server.test.js`. Run `npm test`; there is no reason to
+name files individually.
 
-`npm install` fails, so nothing that needs the dependency tree can run. This is not a
-local misconfiguration; it is the state of the repository.
-
-`package.json` pins `"sbx-core": "github:DanielDTech/sbx-core#v1.0.0"`, and the
-repository `DanielDTech/sbx-core` does not exist:
-
-```
-npm error code 128
-npm error An unknown git error occurred
-npm error command git --no-replace-objects ls-remote ssh://git@github.com/DanielDTech/sbx-core.git
-npm error ERROR: Repository not found.
-npm error fatal: Could not read from remote repository.
-```
-
-Because the install fails as a whole, no `node_modules` is produced at all, and
-`npm test` cannot pass. `test/server.test.js` dies on import before a single assertion
-runs:
-
-```
-Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'sbx-lib' imported from src/http/server.js
-    code: 'ERR_MODULE_NOT_FOUND'
-✖ test/server.test.js
-ℹ tests 11
-ℹ pass 10
-ℹ fail 1
-```
-
-The error names `sbx-lib` only because it is the first bare import in `server.js` and the
-failed install left no packages installed whatsoever. The root cause is the missing
-`sbx-core`. CI on this repository is red for the same reason, on `main` and on any
-branch, at the `npm install` step.
-
-**Not exercisable.** The entire HTTP surface. The server cannot be started at all, so
-none of this can be checked:
-
-- `/health` and the `401` on everything else — auth enforcement end to end
-- pagination over HTTP, including the page clamp and non-numeric `page` values
-- create (`201`), validation pass-through (`422`), and the not-JSON body path
-- delete (`204` / `404`), `404` for unknown paths, `405` for wrong methods
-- the whole of `sbx-web`'s end-to-end path against a real API
-- `npm start`, and anything involving `PORT` or `SBX_DATA_FILE`
-
-**Still exercisable.** The store, auth and list unit tests, which import no bare
-specifiers and so need no `node_modules`:
+To run the server, set the three environment variables, or let them default:
 
 ```sh
-node --test test/store.test.js test/auth.test.js test/list.test.js
+PORT=4600 SBX_DATA_FILE=/tmp/sbx-api-demo.json SBX_API_KEYS=e2e-key npm start
+# logs: sbx-api on http://localhost:4600
 ```
 
-Confirmed passing on 2026-10-07: 10 tests, 10 pass, 0 fail. These cover persistence
-across a reload, `nextId`, `remove`'s return value, key parsing, header checking,
-pagination and serialization.
+`PORT` defaults to `4600`, `SBX_DATA_FILE` to `data/bookmarks.json` and `SBX_API_KEYS`
+to the single key `dev-key`. Point `SBX_DATA_FILE` at a throwaway file under `/tmp`, as
+above, so a local poke-around never writes into the repository's own `data` directory.
 
-### What would unblock it
+### A worked sequence against a running server
 
-Exactly one of:
+With the server started exactly as above, these six calls cover the whole surface. Every
+request and every response below was run and copied from a real server.
 
-1. The repository `DanielDTech/sbx-core` is created and tagged `v1.0.0`, exporting
-   `normalizeUrl`.
-2. A human decides `normalizeUrl` moves into `sbx-lib`, and `sbx-api` is repointed at
-   it. That is a change to a shared dependency and needs its own ticket.
+`/health` is open; it needs no key:
 
-Both options are outside this repository. Nothing in the three sbx repositories provides
-`normalizeUrl` today, and `sbx-core` is outside the sbx project's scope. Do not create
-`sbx-core` here, do not vendor or reimplement `normalizeUrl`, and do not patch around
-the missing dependency: a shared dependency is never patched locally.
+```sh
+$ curl -s http://localhost:4600/health
+{"ok":true}
+```
+
+Everything else needs the key. Without it, a `401`, before any routing:
+
+```sh
+$ curl -s http://localhost:4600/bookmarks
+{"error":"missing or wrong x-api-key"}
+```
+
+Create. Note the url going in and the url coming back: `normalizeUrl` lowercased the
+host, dropped the default port `:443` and dropped the `#frag` fragment:
+
+```sh
+$ curl -s -X POST http://localhost:4600/bookmarks \
+    -H 'x-api-key: e2e-key' -H 'content-type: application/json' \
+    -d '{"title":"Example","url":"https://EXAMPLE.com:443/#frag","tags":["web"]}'
+{"id":1,"title":"Example","url":"https://example.com","tags":["web"],"createdAt":"2026-10-07T19:33:20.755Z"}
+```
+
+An invalid body is a `422` carrying `sbx-lib`'s errors unchanged:
+
+```sh
+$ curl -s -X POST http://localhost:4600/bookmarks \
+    -H 'x-api-key: e2e-key' -H 'content-type: application/json' \
+    -d '{"title":"","url":"nope"}'
+{"errors":["title is required","url must start with http:// or https://"]}
+```
+
+The list is the paginated envelope:
+
+```sh
+$ curl -s http://localhost:4600/bookmarks -H 'x-api-key: e2e-key'
+{"items":[{"id":1,"title":"Example","url":"https://example.com","tags":["web"],"createdAt":"2026-10-07T19:33:20.755Z"}],"page":1,"pages":1,"total":1}
+```
+
+Delete answers `204` with no body:
+
+```sh
+$ curl -s -o /dev/null -w '%{http_code}\n' -X DELETE http://localhost:4600/bookmarks/1 \
+    -H 'x-api-key: e2e-key'
+204
+```
+
+Afterwards, stop the server and delete the throwaway file.
+
+### Everything is exercisable in isolation
+
+The API's own tests start a real HTTP server on an ephemeral port against a temporary
+data file: `test/server.test.js` calls `server.listen(0, ...)` and points `createStore`
+at a file inside a fresh `mkdtempSync` directory. So whoever owns this code can exercise
+every pathway — auth enforcement, pagination, create, the `422`, the not-JSON body,
+delete, the `404` and the `405` — with nothing else running and no network. No other sbx
+repository needs to be up, no particular port needs to be free, and no state is shared
+between tests or left behind afterwards.
+
+The end-to-end path through a consumer also works: `sbx-web` pointed at a running
+`sbx-api` renders the real list and its add form writes through. That is worth doing
+before changing a status code or the bookmark shape, but it is not needed to exercise
+this repository's own behaviour.

@@ -40,11 +40,9 @@ its own decision and its own work, none of which exists here:
 None of that should be invented in passing. It is a decision for a human, and it needs
 its own ticket.
 
-## Nothing can be released while the build is broken
+## The tree itself is not the obstacle
 
-Independently of all of the above: `npm install` fails because `package.json` pins
-`github:DanielDTech/sbx-core#v1.0.0` and that repository does not exist, so `npm test`
-cannot pass and the server cannot start. CI is red on `main` for this reason. No release
-of any form should happen from a tree that cannot be installed, tested or run. See the
-Local environment section of [index.md](./index.md) for the exact errors and for what
-would unblock it.
+Nothing about the build stands in the way. `npm install` resolves both git dependencies,
+`npm test` passes in full — 17 tests, 17 pass, 0 fail — and `npm start` serves the whole
+HTTP surface. What is missing is a release process, not a working tree. See the Local
+environment section of [index.md](./index.md) for the exact commands.
