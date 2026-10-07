@@ -1,0 +1,12 @@
+{
+  "name": "sbx-api",
+  "version": "0.1.0",
+  "description": "Public HTTP API for sbx bookmarks",
+  "type": "module",
+  "scripts": { "test": "node --test", "start": "node bin/start.js" },
+  "dependencies": {
+    "sbx-core": "github:DanielDTech/sbx-core#v1.0.0",
+    "sbx-lib": "github:DanielDTech/sbx-lib#v0.1.0"
+  },
+  "engines": { "node": ">=22" }
+}
