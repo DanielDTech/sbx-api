@@ -19,9 +19,9 @@ key is a `401` for everything else, before any routing decision is made.
 | GET | `/bookmarks?page=N` | `200` `{ items, page, pages, total }`, 10 per page | `401` without a valid key |
 | GET | `/bookmarks/:id` | `200` one serialized bookmark | `404` if no such id |
 | POST | `/bookmarks` | `201` the created bookmark | `422` `{ errors }` for an invalid body |
+| DELETE | `/bookmarks/:id` | `204`, no body | `404` if no such id |
 
 The `POST` body is `{ title, url, tags, note }`, where `note` is optional.
-| DELETE | `/bookmarks/:id` | `204`, no body | `404` if no such id |
 
 Anything else is a `404` if the path is not `/bookmarks` or `/bookmarks/:id`, and a
 `405` if the path matches but the method does not. A request body that is not JSON is
