@@ -7,8 +7,8 @@ That is the honest state of it, not an omission from this document. Concretely, 
 
 - No registry package. `package.json` has no `publishConfig`, no `files` field and no
   `prepublish`/`prepack` script, and nothing publishes to npm or to any other registry.
-- No tag convention in use. The repository has no tags. The three commits on `main` are
-  plain commits.
+- No tag convention in use. The repository has no tags. The commits on `main`
+  are plain commits.
 - Version `0.1.0` in `package.json`, unchanged since the first commit. No `npm version`
   step, no changelog.
 - No deploy target. There is no `Dockerfile`, no container build, no hosting or platform

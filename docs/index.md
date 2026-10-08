@@ -121,7 +121,7 @@ own.
 
 | Dependency | Pin | Owns | What this repository tests |
 |---|---|---|---|
-| `sbx-lib` | `github:DanielDTech/sbx-lib#v0.1.1` | the bookmark validation rules behind the `422` response (`validateBookmark`) | that an invalid body yields `422` and that `check.errors` is passed through unchanged. Never re-test the individual rules; they belong to `sbx-lib` |
+| `sbx-lib` | `github:DanielDTech/sbx-lib#v0.1.2` | the bookmark validation rules behind the `422` response (`validateBookmark`) | that an invalid body yields `422` and that `check.errors` is passed through unchanged. Never re-test the individual rules; they belong to `sbx-lib` |
 | `sbx-core` | `github:DanielDTech/sbx-core#v1.0.0` | url normalization via `normalizeUrl`, used on create. In its own words: "lowercase host, no default port, no fragment, no bare trailing slash" | that create calls it and stores what it returns. Never the normalization rules themselves: `sbx-core` is maintained outside the sbx project and tests its own behaviour |
 | `node:http`, `node:fs`, `node:path` | Node's own | the http server, file IO and path handling | nothing; these are the platform |
 

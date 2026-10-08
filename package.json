@@ -6,7 +6,7 @@
   "scripts": { "test": "node --test", "start": "node bin/start.js" },
   "dependencies": {
     "sbx-core": "github:DanielDTech/sbx-core#v1.0.0",
-    "sbx-lib": "github:DanielDTech/sbx-lib#v0.1.1"
+    "sbx-lib": "github:DanielDTech/sbx-lib#v0.1.2"
   },
   "engines": { "node": ">=22" }
 }
