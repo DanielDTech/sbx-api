@@ -13,10 +13,12 @@ Every endpoint except `/health` needs the header `x-api-key`. Keys come from `SB
 | GET | `/health` | `{ ok: true }` |
 | GET | `/bookmarks?page=N` | `{ items, page, pages, total }`, 10 per page |
 | GET | `/bookmarks/:id` | one bookmark, or 404 |
-| POST | `/bookmarks` | body `{ title, url, tags }`; 201 with the bookmark, 422 with `{ errors }` |
+| POST | `/bookmarks` | body `{ title, url, tags, note }`, `note` optional; 201 with the bookmark, 422 with `{ errors }` |
 | DELETE | `/bookmarks/:id` | 204, or 404 |
 
-A bookmark is `{ id, title, url, tags, createdAt }`; urls are normalized.
+A bookmark is `{ id, title, url, tags, createdAt }`, plus `note` when it was created
+with one; urls are normalized. A `note` is optional, is kept exactly as sent, and is
+refused with a `422` past 500 code units.
 
 ## Running
 

@@ -1,11 +1,20 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createStore } from '../src/store.js';
 
-const tempFile = () => join(mkdtempSync(join(tmpdir(), 'sbx-store-')), 'data', 'bookmarks.json');
+const temporaryDirectories = [];
+const tempFile = () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sbx-store-'));
+  temporaryDirectories.push(directory);
+  return join(directory, 'data', 'bookmarks.json');
+};
+
+after(() => {
+  for (const directory of temporaryDirectories) rmSync(directory, { recursive: true, force: true });
+});
 
 test('added bookmarks get increasing ids and survive a reload', () => {
   const file = tempFile();

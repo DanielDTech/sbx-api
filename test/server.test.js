@@ -1,17 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createStore } from '../src/store.js';
 import { createServer } from '../src/http/server.js';
 
 async function withServer(fn) {
-  const store = createStore(join(mkdtempSync(join(tmpdir(), 'sbx-api-')), 'b.json'));
+  const directory = mkdtempSync(join(tmpdir(), 'sbx-api-'));
+  const store = createStore(join(directory, 'b.json'));
   const server = createServer({ store, keys: ['k'] });
   await new Promise((resolve) => server.listen(0, resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
-  try { await fn(base, store); } finally { server.close(); }
+  try { await fn(base, store); } finally { server.close(); rmSync(directory, { recursive: true, force: true }); }
 }
 const authed = { 'x-api-key': 'k', 'content-type': 'application/json' };
 

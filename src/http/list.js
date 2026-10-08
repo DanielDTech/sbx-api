@@ -6,5 +6,6 @@ export function paginate(items, page, size) {
 }
 
 export function serializeBookmark(b) {
-  return { id: b.id, title: b.title, url: b.url, tags: b.tags ?? [], createdAt: b.createdAt };
+  const optionalNote = b.note === undefined ? {} : { note: b.note };
+  return { id: b.id, title: b.title, url: b.url, tags: b.tags ?? [], createdAt: b.createdAt, ...optionalNote };
 }
