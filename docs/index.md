@@ -19,6 +19,8 @@ key is a `401` for everything else, before any routing decision is made.
 | GET | `/bookmarks?page=N` | `200` `{ items, page, pages, total }`, 10 per page | `401` without a valid key |
 | GET | `/bookmarks/:id` | `200` one serialized bookmark | `404` if no such id |
 | POST | `/bookmarks` | `201` the created bookmark | `422` `{ errors }` for an invalid body |
+
+The `POST` body is `{ title, url, tags, note }`, where `note` is optional.
 | DELETE | `/bookmarks/:id` | `204`, no body | `404` if no such id |
 
 Anything else is a `404` if the path is not `/bookmarks` or `/bookmarks/:id`, and a
@@ -40,6 +42,25 @@ The public shape of a bookmark, and the only shape any client should rely on:
 }
 ```
 
+A bookmark created with a `note` carries a sixth field holding it:
+
+```json
+{
+  "id": 2,
+  "title": "Example",
+  "url": "https://example.com",
+  "tags": ["web"],
+  "createdAt": "2026-10-07T00:00:00.000Z",
+  "note": "why this is worth keeping"
+}
+```
+
+`note` is optional and is present only when the bookmark has one. A bookmark created
+without it has no `note` key at all, rather than a `note` holding `null`, and a
+bookmark stored before the field existed reads back the same way, so nothing needs
+migrating. An empty string and a whitespace-only string are both notes: they are
+stored as sent, untrimmed, and are distinguishable from no note at all.
+
 `serializeBookmark` is what decides this shape. Fields stored but not listed here are
 not part of the contract and are stripped on the way out.
 
@@ -58,7 +79,8 @@ missing or wrong `x-api-key` on everything else, `GET /bookmarks` paginated,
 `GET /bookmarks/:id`, `POST /bookmarks` answering `201` or the `422` that carries
 `sbx-lib`'s validation errors, `DELETE /bookmarks/:id` answering `204` or `404`, the
 `405` for a wrong method, and the rule that a body which is not JSON is invalid input
-rather than a crash.
+rather than a crash. On create it passes `note` through to the store when the body
+carries one and omits it entirely when it does not; it neither trims nor shortens it.
 
 `list.js` owns two pure functions: `paginate`, which clamps the requested page into the
 available range, and `serializeBookmark`, which decides the public shape of a bookmark.
@@ -121,7 +143,7 @@ own.
 
 | Dependency | Pin | Owns | What this repository tests |
 |---|---|---|---|
-| `sbx-lib` | `github:DanielDTech/sbx-lib#v0.1.2` | the bookmark validation rules behind the `422` response (`validateBookmark`) | that an invalid body yields `422` and that `check.errors` is passed through unchanged. Never re-test the individual rules; they belong to `sbx-lib` |
+| `sbx-lib` | `github:DanielDTech/sbx-lib#v0.1.2` | the bookmark validation rules behind the `422` response (`validateBookmark`), including the 500-code-unit ceiling on `note` and the rule that a `note` must be text | that an invalid body yields `422` and that `check.errors` is passed through unchanged. Never re-test the individual rules; they belong to `sbx-lib`. The ceiling is counted in code units, settled by Danny in decision 2119e5, so 250 two-unit emoji are a full 500 and are refused; what this repository tests is that it stores and returns what it was handed, untruncated |
 | `sbx-core` | `github:DanielDTech/sbx-core#v1.0.0` | url normalization via `normalizeUrl`, used on create. In its own words: "lowercase host, no default port, no fragment, no bare trailing slash" | that create calls it and stores what it returns. Never the normalization rules themselves: `sbx-core` is maintained outside the sbx project and tests its own behaviour |
 | `node:http`, `node:fs`, `node:path` | Node's own | the http server, file IO and path handling | nothing; these are the platform |
 
@@ -146,13 +168,12 @@ passes in full.
 
 ```sh
 npm install                 # resolves sbx-lib and sbx-core from GitHub
-npm test                    # node --test: 28 tests, 28 pass, 0 fail
+npm test                    # node --test
 ```
 
-Confirmed on 2026-10-07 on Node v24.21.0: 28 tests, 28 pass, 0 fail. The suite is the
-five test files together — `test/store.test.js`, `test/auth.test.js`,
-`test/list.test.js`, `test/server.test.js` and `test/pagination.test.js`. Run
-`npm test`; there is no reason to name files individually.
+Confirmed on 2026-10-08 on Node v24.21.0: the suite passes in full. It is every file
+under `test/`, and `npm test` runs them all; there is no reason to name files
+individually, and no count is kept here because the suite is the authority.
 
 To run the server, set the three environment variables, or let them default:
 

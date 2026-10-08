@@ -37,7 +37,8 @@ export function createServer({ store, keys, pageSize = 10 }) {
       const body = await readJson(req);
       const check = validateBookmark(body);
       if (!check.ok) return send(res, 422, { errors: check.errors });
-      const bookmark = store.add({ title: body.title.trim(), url: normalizeUrl(body.url), tags: body.tags ?? [] });
+      const optionalNote = body.note === undefined ? {} : { note: body.note };
+      const bookmark = store.add({ title: body.title.trim(), url: normalizeUrl(body.url), tags: body.tags ?? [], ...optionalNote });
       return send(res, 201, serializeBookmark(bookmark));
     }
     if (req.method === 'DELETE' && id !== null) return store.remove(id) ? send(res, 204) : send(res, 404, { error: 'not found' });
