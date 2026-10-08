@@ -43,6 +43,6 @@ its own ticket.
 ## The tree itself is not the obstacle
 
 Nothing about the build stands in the way. `npm install` resolves both git dependencies,
-`npm test` passes in full — 17 tests, 17 pass, 0 fail — and `npm start` serves the whole
+`npm test` passes in full — 28 tests, 28 pass, 0 fail — and `npm start` serves the whole
 HTTP surface. What is missing is a release process, not a working tree. See the Local
 environment section of [index.md](./index.md) for the exact commands.

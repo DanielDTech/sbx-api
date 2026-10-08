@@ -146,13 +146,13 @@ passes in full.
 
 ```sh
 npm install                 # resolves sbx-lib and sbx-core from GitHub
-npm test                    # node --test: 17 tests, 17 pass, 0 fail
+npm test                    # node --test: 28 tests, 28 pass, 0 fail
 ```
 
-Confirmed on 2026-10-07 on Node v24.21.0: 17 tests, 17 pass, 0 fail. The suite is the
-four test files together — `test/store.test.js`, `test/auth.test.js`,
-`test/list.test.js` and `test/server.test.js`. Run `npm test`; there is no reason to
-name files individually.
+Confirmed on 2026-10-07 on Node v24.21.0: 28 tests, 28 pass, 0 fail. The suite is the
+five test files together — `test/store.test.js`, `test/auth.test.js`,
+`test/list.test.js`, `test/server.test.js` and `test/pagination.test.js`. Run
+`npm test`; there is no reason to name files individually.
 
 To run the server, set the three environment variables, or let them default:
 
